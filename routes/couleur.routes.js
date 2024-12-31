@@ -1,3 +1,4 @@
+const cors = require('cors');
 // routes/couleurRoutes.js
 const express = require("express");
 const upload = require("../middlewares/multer/multerColorConfig");

@@ -1,7 +1,8 @@
 const router = require("express").Router();
+const cors = require('cors');
 const connection = require("../utils/db_config");
 
-router.post("/qteProduit", async (req, res) => {
+router.post("/qteProduit",cors(), async (req, res) => {
   const { idProd, idTaille, idCoul, quantite } = req.body;
 
   // Validation des données reçues
@@ -62,7 +63,7 @@ router.post("/qteProduit", async (req, res) => {
 });
 
 // GET /qteProduit
-router.get("/qteProduit", async (req, res) => {
+router.get("/qteProduit",cors(), async (req, res) => {
   const { idProd, idTaille, idCoul } = req.query; // Extract query parameters
 
   try {
@@ -128,7 +129,7 @@ router.get("/qteProduit", async (req, res) => {
   }
 });
 
-router.get("/productIds", async (req, res) => {
+router.get("/productIds",cors(), async (req, res) => {
   try {
     const [rows] = await connection.query(
       "SELECT id_prod, nom_prod FROM produit"
@@ -148,7 +149,7 @@ router.get("/productIds", async (req, res) => {
   }
 });
 
-router.post("/qteProduit-order/:idOrder", async (req, res) => {
+router.post("/qteProduit-order/:idOrder",cors(), async (req, res) => {
   const { idOrder } = req.params;
   const { products } = req.body; // Tableau de produits et quantités [{idProd, qte}, ...]
 
@@ -205,7 +206,7 @@ router.post("/qteProduit-order/:idOrder", async (req, res) => {
   }
 });
 
-router.get("/commande/:idOrder/produits", async (req, res) => {
+router.get("/commande/:idOrder/produits",cors(), async (req, res) => {
   const { idOrder } = req.params;
 
   try {

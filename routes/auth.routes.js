@@ -1,3 +1,5 @@
+const cors = require('cors');
+const cors = require('cors');
 const express = require("express");
 const router = express.Router();
 const {
@@ -10,11 +12,11 @@ const {
   authJwt,
   validateResetToken,
 } = require("../middlewares/auth.middleware");
-router.post("/auth/login", login);
-router.post("/auth/logout", authJwt, logout);
-router.post("/auth/forget-password", forgetPassword);
-router.post("/auth/reset-password", resetPassword);
-router.post("/auth/check", authJwt, async (req, res) => {
+router.post("/auth/login",cors(),  login);
+router.post("/auth/logout",cors(),  authJwt, logout);
+router.post("/auth/forget-password",cors(),  forgetPassword);
+router.post("/auth/reset-password",cors(),  resetPassword);
+router.post("/auth/check",cors(),  authJwt, async (req, res) => {
   return res.status(200).json({ data: req.admin });
 });
 

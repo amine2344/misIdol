@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require('cors');
 const {
   createMaterielProduit,
   getAllMaterielProduits,
@@ -11,10 +12,10 @@ const {
 const router = express.Router();
 
 // Routes pour gérer les associations matériel-produit
-router.post("/materiel-produit", createMaterielProduit);
-router.get("/materiel-produit", getAllMaterielProduits);
-router.get("/materiel-produit/:materielId/:produitId", getMaterielProduitById);
-router.put("/materiel-produit/:materielId/:produitId", updateMaterielProduit);
+router.post("/materiel-produit", cors(),createMaterielProduit);
+router.get("/materiel-produit",cors(), getAllMaterielProduits);
+router.get("/materiel-produit/:materielId/:produitId",cors(), getMaterielProduitById);
+router.put("/materiel-produit/:materielId/:produitId",cors(), updateMaterielProduit);
 router.delete(
   "/materiel-produit/:materielId/:produitId",
   deleteMaterielProduit

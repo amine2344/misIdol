@@ -1,6 +1,6 @@
 const { default: createMollieClient } = require("@mollie/api-client");
 const express = require("express");
-const router = express.Router();
+const router = express.Router();const cors = require('cors');
 const db = require("../utils/db_config"); // Remplace par ton instance de base de données
 const axios = require("axios");
 const crypto = require("crypto");
@@ -10,7 +10,7 @@ const mollieClient = createMollieClient({ apiKey: process.env.MOLLIE_API_KEY });
 
 // Route pour créer un PaymentIntent
 
-router.post("/create-payment-intent", async (req, res) => {
+router.post("/create-payment-intent",cors(), async (req, res) => {
   const { currency, idOrder } = req.body;
 
   try {
@@ -93,7 +93,7 @@ router.post("/create-payment-intent", async (req, res) => {
   }
 });
 
-router.post("/webhook/mollie", async (req, res) => {
+router.post("/webhook/mollie",cors(), async (req, res) => {
   const paymentId = req.body.id;
 
   try {
@@ -120,7 +120,7 @@ router.post("/webhook/mollie", async (req, res) => {
 });
 
 // Route pour récupérer toutes les transactions avec un format personnalisé
-router.get("/transactions", async (req, res) => {
+router.get("/transactions",cors(), async (req, res) => {
   try {
     const queryGetAllTransactions = `
       SELECT transaction_id, id_commande, amount_ht, amount_tva, amount_ttc, currency, status, created_at, updated_at
@@ -175,7 +175,7 @@ function generateSignature(params, secretKey) {
 }
 
 // Route pour initier le paiement par QR code
-router.post("/initiate-payment", async (req, res) => {
+router.post("/initiate-payment",cors(), async (req, res) => {
   // Utilisation des valeurs statiques pour le test
   const params = {
     TRANSACTIONTYPE: "CREATE_QR",

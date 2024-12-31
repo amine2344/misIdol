@@ -1,3 +1,4 @@
+const cors = require('cors');
 const express = require("express");
 const router = express.Router();
 const connection = require("../utils/db_config"); // Connexion à la base de données
@@ -14,7 +15,7 @@ apiKey.apiKey = process.env.BREVO_API_KEY; // Assurez-vous que votre clé API es
 let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
 // Route pour récupérer les catégories filtrées par sectionId
-router.get("/categorie/filtredBySection", async (req, res) => {
+router.get("/categorie/filtredBySection",cors(),  async (req, res) => {
   const { sectionId } = req.query;
 
   try {
@@ -30,7 +31,7 @@ router.get("/categorie/filtredBySection", async (req, res) => {
   }
 });
 
-router.get("/sous-categorie/filtredByCategorie", async (req, res) => {
+router.get("/sous-categorie/filtredByCategorie", cors(), async (req, res) => {
   const { categorieId } = req.query;
 
   try {
@@ -46,7 +47,7 @@ router.get("/sous-categorie/filtredByCategorie", async (req, res) => {
   }
 });
 
-router.get("/client/produits", async (req, res) => {
+router.get("/client/produits", cors(), async (req, res) => {
   try {
     const { category, priceMax, size, color, material, subcategory, section } =
       req.query;
@@ -221,7 +222,7 @@ router.get("/client/produits", async (req, res) => {
   }
 });
 
-router.get("/client/produit/:id", async (req, res) => {
+router.get("/client/produit/:id",cors(),  async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -352,7 +353,7 @@ router.get("/client/produit/:id", async (req, res) => {
   }
 });
 
-router.get("/client/currency", async (req, res) => {
+router.get("/client/currency",cors(),  async (req, res) => {
   try {
     const response = await axios.get(
       `https://api.exchangeratesapi.io/v1/latest?access_key=${process.env.APIKEY_CURRENCY}`
@@ -368,7 +369,7 @@ router.get("/client/currency", async (req, res) => {
   }
 });
 
-router.get("/client/style/:id", async (req, res) => {
+router.get("/client/style/:id", cors(), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -462,7 +463,7 @@ router.get("/client/style/:id", async (req, res) => {
   }
 });
 
-router.get("/client/collections", async (req, res) => {
+router.get("/client/collections",cors(),  async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -516,7 +517,7 @@ router.get("/client/collections", async (req, res) => {
   }
 });
 
-router.get("/client/filtred", async (req, res) => {
+router.get("/client/filtred",cors(),  async (req, res) => {
   const { sectionId, categorieId } = req.query;
 
   try {
@@ -560,7 +561,7 @@ router.get("/client/filtred", async (req, res) => {
   }
 });
 
-router.post("/client/order", async (req, res) => {
+router.post("/client/order", cors(), async (req, res) => {
   const { commandeId, produits } = req.body; // produits doit être un tableau d'objets
 
   try {
@@ -606,7 +607,7 @@ router.post("/client/order", async (req, res) => {
   }
 });
 
-router.post("/client/send-email", async (req, res) => {
+router.post("/client/send-email", cors(), async (req, res) => {
   const { email, idOrder } = req.body; // Récupérer les données du corps de la requête
 
   // Options pour créer un e-mail
@@ -648,7 +649,7 @@ router.post("/client/send-email", async (req, res) => {
   );
 });
 
-router.get("/countries", async (req, res) => {
+router.get("/countries",cors(),  async (req, res) => {
   const options = {
     method: "GET",
     url: "https://country-state-city-search-rest-api.p.rapidapi.com/allcountries",
@@ -667,7 +668,7 @@ router.get("/countries", async (req, res) => {
   }
 });
 
-router.get("/stateByCountry", async (req, res) => {
+router.get("/stateByCountry", cors(), async (req, res) => {
   const { isoCodeCountry } = req.query; // Changer req.body en req.query
   const options = {
     method: "GET",
@@ -686,7 +687,7 @@ router.get("/stateByCountry", async (req, res) => {
   }
 });
 
-router.get("/cityByState", async (req, res) => {
+router.get("/cityByState",cors(),  async (req, res) => {
   const { countryCode, stateCode } = req.query; // Changer req.body en req.query
 
   const options = {
