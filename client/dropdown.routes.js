@@ -62,83 +62,61 @@ router.get("/client/produits", cors(), async (req, res) => {
     const colors = parseQueryParam(color);
     const materials = parseQueryParam(material);
 
-    let query = `
-      SELECT 
-        p.id_prod AS product_id, 
-        p.nom_prod AS product_name, 
-        p.pu_prod AS product_price, 
-        COALESCE(pct.quantite, 0) AS stock_quantity,  
-        ph.id_photo AS photo_id, 
-        ph.path_photo AS photo_path,  
-        ph.is_prod_cover AS cover, 
-        ph.is_prod_cover_on_hover AS cover_hover,
-        t.id_taille AS size_id, 
-        t.valeur_taille AS size_name,
-        col.id_coul AS color_id,
-        col.description_couleur AS color_name,
-        m.id_mat AS material_id,
-        m.nom_mat AS material_name
-      FROM produit p
-      LEFT JOIN produit_taille pt ON p.id_prod = pt.id_prod
-      LEFT JOIN taille t ON pt.id_taille = t.id_taille
-      LEFT JOIN produit_couleur_photo pcp ON p.id_prod = pcp.id_prod
-      LEFT JOIN couleur col ON pcp.id_coul = col.id_coul
-      LEFT JOIN photo ph ON pcp.id_photo = ph.id_photo
-      LEFT JOIN materiel_produit pm ON p.id_prod = pm.id_prod
-      LEFT JOIN materiel m ON pm.id_mat = m.id_mat
-      LEFT JOIN sous_categorie sc ON p.id_sous_cat = sc.id_sous_cat
-      LEFT JOIN categorie c ON sc.id_cat = c.id_cat
-      LEFT JOIN section sec ON c.id_sec = sec.id_sec
-      LEFT JOIN produit_taille_couleur_quantite pct ON p.id_prod = pct.id_prod  
-      WHERE 1 = 1
-    `;
+    let query = `SELECT p.id_prod, p.nom_prod, p.pu_prod, p.description_prod, p.date_ajout_prod, 
+                        p.id_sous_cat, p.id_style, 
+                        sc.nom_sous_cat, c.nom_cat, sec.nom_sec,
+                        t.id_taille, col.id_coul, m.id_mat, 
+                        pcp.photo_url
+                 FROM produit p
+                 LEFT JOIN sous_categorie sc ON p.id_sous_cat = sc.id_sous_cat
+                 LEFT JOIN categorie c ON sc.id_cat = c.id_cat
+                 LEFT JOIN section sec ON c.id_sec = sec.id_sec
+                 LEFT JOIN produit_taille pt ON p.id_prod = pt.id_prod
+                 LEFT JOIN taille t ON pt.id_taille = t.id_taille
+                 LEFT JOIN produit_couleur_photo pcp ON p.id_prod = pcp.id_prod
+                 LEFT JOIN couleur col ON pcp.id_coul = col.id_coul
+                 LEFT JOIN materiel_produit mp ON p.id_prod = mp.id_prod
+                 LEFT JOIN materiel m ON mp.id_mat = m.id_mat
+                 LEFT JOIN photo pi ON pcp.id_photo = pi.id_photo
+                 WHERE 1=1`;
 
     const params = [];
 
+    // Apply filters
     if (priceMax) {
       query += " AND p.pu_prod <= ?";
       params.push(priceMax);
     }
 
-    const filters = [
-      {
-        condition: categories.length > 0,
-        query: "c.id_cat IN (?)",
-        values: categories,
-      },
-      {
-        condition: subcategories.length > 0,
-        query: "sc.id_sous_cat IN (?)",
-        values: subcategories,
-      },
-      {
-        condition: sections.length > 0,
-        query: "sec.id_sec IN (?)",
-        values: sections,
-      },
-      {
-        condition: sizes.length > 0,
-        query: "t.id_taille IN (?)",
-        values: sizes,
-      },
-      {
-        condition: colors.length > 0,
-        query: "col.id_coul IN (?)",
-        values: colors,
-      },
-      {
-        condition: materials.length > 0,
-        query: "m.id_mat IN (?)",
-        values: materials,
-      },
-    ];
+    if (categories.length > 0) {
+      query += " AND c.id_cat IN (?)";
+      params.push(categories);
+    }
 
-    filters.forEach((filter) => {
-      if (filter.condition) {
-        query += ` AND ${filter.query}`;
-        params.push(filter.values);
-      }
-    });
+    if (subcategories.length > 0) {
+      query += " AND sc.id_sous_cat IN (?)";
+      params.push(subcategories);
+    }
+
+    if (sections.length > 0) {
+      query += " AND sec.id_sec IN (?)";
+      params.push(sections);
+    }
+
+    if (sizes.length > 0) {
+      query += " AND t.id_taille IN (?)";
+      params.push(sizes);
+    }
+
+    if (colors.length > 0) {
+      query += " AND col.id_coul IN (?)";
+      params.push(colors);
+    }
+
+    if (materials.length > 0) {
+      query += " AND m.id_mat IN (?)";
+      params.push(materials);
+    }
 
     const [rows] = await connection.query(query, params);
 
@@ -149,59 +127,56 @@ router.get("/client/produits", cors(), async (req, res) => {
     const formatProducts = (rows) => {
       return rows.reduce((acc, product) => {
         let existingProduct = acc.find(
-          (p) => p.productId === product.product_id
+          (p) => p.productId === product.id_prod
         );
 
         if (existingProduct) {
           if (
-            product.size_id &&
+            product.id_taille &&
             !existingProduct.sizes.some(
-              (size) => size.sizeId === product.size_id
+              (size) => size.sizeId === product.id_taille
             )
           ) {
             existingProduct.sizes.push({
-              sizeId: product.size_id,
-              sizeName: product.size_name,
+              sizeId: product.id_taille,
+              sizeName: product.nom_sous_cat,
             });
           }
           if (
-            product.color_id &&
+            product.id_coul &&
             !existingProduct.colors.some(
-              (color) => color.colorId === product.color_id
+              (color) => color.colorId === product.id_coul
             )
           ) {
             existingProduct.colors.push({
-              colorId: product.color_id,
-              colorName: product.color_name,
+              colorId: product.id_coul,
+              colorName: product.nom_sous_cat,
             });
           }
-          if (product.cover && !existingProduct.photos.cover) {
-            existingProduct.photos.cover = product.photo_path;
-          }
-          if (product.cover_hover && !existingProduct.photos.coverHover) {
-            existingProduct.photos.coverHover = product.photo_path;
+          if (product.photo_url && !existingProduct.photos.cover) {
+            existingProduct.photos.cover = product.photo_url;
           }
         } else {
           acc.push({
-            productId: product.product_id,
-            productName: product.product_name,
-            productPrice: product.product_price,
-            stockQuantity: product.stock_quantity, // Inclure la quantité de stock
+            productId: product.id_prod,
+            productName: product.nom_prod,
+            productPrice: product.pu_prod,
+            productDescription: product.description_prod,
+            stockQuantity: product.id_sous_cat, // Assuming this is a field for stock quantity
             photos: {
-              cover: product.cover ? product.photo_path : null,
-              coverHover: product.cover_hover ? product.photo_path : null,
+              cover: product.photo_url ? product.photo_url : null,
             },
-            sizes: product.size_id
-              ? [{ sizeId: product.size_id, sizeName: product.size_name }]
+            sizes: product.id_taille
+              ? [{ sizeId: product.id_taille, sizeName: product.nom_sous_cat }]
               : [],
-            colors: product.color_id
-              ? [{ colorId: product.color_id, colorName: product.color_name }]
+            colors: product.id_coul
+              ? [{ colorId: product.id_coul, colorName: product.nom_sous_cat }]
               : [],
-            materials: product.material_id
+            materials: product.id_mat
               ? [
                   {
-                    materialId: product.material_id,
-                    materialName: product.material_name,
+                    materialId: product.id_mat,
+                    materialName: product.nom_sous_cat,
                   },
                 ]
               : [],
@@ -221,6 +196,82 @@ router.get("/client/produits", cors(), async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
+router.get("/availableSizes/:id", cors(), async (req, res) => {
+  try {
+    const { id } = req.params; // Get the product ID from the URL parameters
+
+    // SQL query with JOIN to get available sizes and their respective valeur_taille
+    const query = `
+      SELECT DISTINCT t.id_taille, t.valeur_taille
+      FROM produit_taille pt
+      JOIN taille t ON pt.id_taille = t.id_taille
+      WHERE pt.id_prod = ?
+    `;
+
+    // Execute the SQL query to get the available sizes with their respective valeur_taille
+    const [rows] = await connection.query(query, [id]);
+
+    console.log("Product ID:", id);
+    console.log("Query Result:", rows);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: `No available sizes found for product ID: ${id}`,
+      });
+    }
+
+    // Map the results to include the size ID and the size value
+    const availableSizes = rows.map((row) => ({
+      sizeId: row.id_taille,
+      sizeValue: row.valeur_taille,
+    }));
+
+    // Send the available sizes with their values as a response
+    return res.status(200).json({
+      id_prod: id,
+      availableSizes: availableSizes,
+    });
+  } catch (error) {
+    console.error("Error fetching available sizes:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+});
+
+router.get("/product_photos/:id", cors(), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `
+      SELECT photo_url
+      FROM produit_couleur_photo
+      WHERE id_prod = ?
+    `;
+    const [rows] = await connection.query(query, [id]);
+
+    console.log("Product ID:", id);
+    console.log("Query Result:", rows);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: `No photos found for id_prod: ${id}`,
+      });
+    }
+
+    const photoUrls = rows.map((row) => row.photo_url);
+    return res.status(200).json({
+      id_prod: id,
+      photos: photoUrls,
+    });
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+});
+
 
 router.get("/client/produit/:id",cors(),  async (req, res) => {
   try {

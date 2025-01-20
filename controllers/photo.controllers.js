@@ -1,6 +1,35 @@
 const connection = require("../utils/db_config");
 const fs = require("fs");
 const path = require("path");
+const fetch = require('node-fetch');
+const multer = require('multer');
+
+// Setup multer for file upload
+const upload = multer({ dest: 'uploads/' });
+
+exports.uploadImage = async (req, res) => {
+  try {
+    // Destructure title and photoUrl from the request body
+    const { title, photoUrl } = req.body;
+
+    // Insert the image into the database
+    const [result] = await connection.query(
+      `INSERT INTO images (imgSrc, title) VALUES (?, ?)`,
+      [photoUrl, title]
+    );
+
+    // Respond with the inserted image details
+    res.status(201).json({
+      message: 'Image uploaded successfully',
+      id: result.insertId,   // ID of the newly inserted image
+      imgSrc: photoUrl,      // URL of the uploaded image
+      title,                 // Title of the uploaded image
+    });
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).json({ message: "Failed to upload image." });
+  }
+};
 
 // Ajouter plusieurs photos
 exports.addPhotos = async (req, res) => {
@@ -11,25 +40,25 @@ exports.addPhotos = async (req, res) => {
     isProductHoverCover,
     isStyleCover,
     isCollectionCover,
+    photoUrls, // URLs received from the client
   } = req.body;
-  const files = req.files; // On récupère toutes les photos téléchargées
 
-  if (!files || files.length === 0) {
+  if (!photoUrls || photoUrls.length === 0) {
     return res
       .status(400)
-      .json({ message: "Aucune photo n'a été téléchargée." });
+      .json({ message: "No photo URLs provided." });
   }
 
   try {
     let newPhotos = [];
 
-    for (const file of files) {
+    for (const url of photoUrls) {
       const [result] = await connection.query(
         `INSERT INTO photo (path_photo, name_photo, is_prod_cover, is_prod_cover_on_hover, id_col, id_style, is_style_cover, is_col_cover) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          file.path,
-          file.filename,
+          url, // Use the Imghippo URL as the path
+          url.split("/").pop(), // Extract filename from the URL
           isProductCover ? 1 : 0,
           isProductHoverCover ? 1 : 0,
           collectionId,
@@ -41,8 +70,8 @@ exports.addPhotos = async (req, res) => {
 
       newPhotos.push({
         id: result.insertId,
-        path: file.path,
-        name: file.filename,
+        path_photo: url,
+        name_photo: url.split("/").pop(),
         isProductCover: Boolean(isProductCover),
         isProductHoverCover: Boolean(isProductHoverCover),
         collectionId: collectionId,
@@ -54,11 +83,10 @@ exports.addPhotos = async (req, res) => {
 
     res
       .status(201)
-      .json({ message: "Photos ajoutées avec succès", photos: newPhotos });
+      .json({ message: "Photos added successfully", photos: newPhotos });
   } catch (error) {
     console.error(error);
-
-    res.status(500).json({ message: "Erreur lors de l'ajout des photos." });
+    res.status(500).json({ message: "Error adding photos." });
   }
 };
 
@@ -122,6 +150,67 @@ exports.updatePhoto = async (req, res) => {
 };
 
 // Suppression d'une photo
+//
+//
+exports.getImages = async (req, res) => {
+  try {
+    // Fetch images from the database
+    const [images] = await connection.query(
+      `SELECT id, imgSrc, title FROM images`
+    );
+
+    if (!images.length) {
+      return res.status(404).json({ message: "No images found." });
+    }
+
+    res.status(200).json(images);
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    res.status(500).json({ message: "Failed to fetch images." });
+  }
+};
+exports.deleteImage = async (req, res) => {
+  const { id } = req.params; // Image ID from URL parameters
+
+  try {
+    // Delete the image from the database
+    const [result] = await connection.query(
+      `DELETE FROM images WHERE id = ?`,
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Image not found." });
+    }
+
+    res.status(200).json({ message: "Image deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    res.status(500).json({ message: "Failed to delete image." });
+  }
+};
+exports.editImage = async (req, res) => {
+  const { id } = req.params; // Image ID from URL parameters
+  const { title, imgSrc } = req.body; // New title and image URL from the request body
+
+  try {
+    // Update the image in the database
+    const [result] = await connection.query(
+      `UPDATE images SET imgSrc = ?, title = ? WHERE id = ?`,
+      [imgSrc, title, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Image not found." });
+    }
+
+    res.status(200).json({ message: "Image updated successfully." });
+  } catch (error) {
+    console.error("Error editing image:", error);
+    res.status(500).json({ message: "Failed to update image." });
+  }
+};
+
 exports.deletePhoto = async (req, res) => {
   const { id } = req.params;
 

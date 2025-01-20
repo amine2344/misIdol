@@ -1,18 +1,20 @@
 //--- MODULES
-
 const express = require("express");
 const app = express();
+const bodyParser = require('body-parser');
 const dotenv = require("dotenv");
 const connection = require("./utils/db_config");
 dotenv.config();
+const https = require("https");
+
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const path = require("path");
 const helmet = require("helmet");
+const fs = require("fs");
 
 //--- ROUTES
-
 const authRoutes = require("./routes/auth.routes");
 const statsRoutes = require("./routes/stat.routes");
 const adminRoutes = require("./routes/admin.routes");
@@ -38,37 +40,54 @@ const qteProdRoutes = require("./routes/qteProduit.routes");
 const produitTailleCouleurQuantiteRoutes = require("./routes/produitTailleCouleurQuantite.routes");
 const livraisonRoutes = require("./routes/livraison.routes");
 const novaPostRoutes = require("./client/delivery.routes.js");
+const imagesRoute = require("./routes/images.routes.js");
+const clientRoutes = require("./routes/client.routes.js");
+const shipmentsRoutes = require("./routes/shipements.routes.js");
 
 // require("./utils/task_schudel");
+//app.use("/api", shipmentsRoutesddxcdd);
+
+// bodyparser middleware
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 //--- MIDDLEWARES
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "http://localhost:3000",
+  "https://missidol.art",
+  "https://admin.missidol.art",
+  "http://missidol.art", "https://www.missidol.art"
 ];
-// Fonction pour vérifier si l'origine est autorisée
+
+// CORS options
 const corsOptions = {
   origin: function (origin, callback) {
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      // Si l'origine est dans la liste ou si elle est absente (requête interne, par exemple)
-      callback(null, true);
+      callback(null, true); // Allow internal requests (i.e., no origin)
     } else {
-      // Si l'origine n'est pas autorisée
-      callback(new Error("CORS non autorisé"));
+      callback(new Error("CORS not allowed"));
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE"], // Autoriser les méthodes HTTP
-  credentials: true, // Permettre l'envoi de cookies
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE"], // Allow HTTP methods
+  credentials: true, // Allow cookies
+  allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
 };
 
+const options = {
+    key: fs.readFileSync("/etc/ssl/private/private.key"),
+    cert: fs.readFileSync("/etc/ssl/certificate.crt"),
+};
 app.use(cors(corsOptions));
 
+// Helmet for security
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -78,9 +97,9 @@ app.use(
         "script-src": ["'self'", "'unsafe-inline'"],
       },
     },
-    frameguard: { action: "deny" }, // Empêcher l'affichage dans un iframe
+    frameguard: { action: "deny" }, // Prevent iframe display
     hsts: {
-      maxAge: 31536000, // Force HTTPS pendant 1 an
+      maxAge: 31536000, // Force HTTPS for 1 year
       includeSubDomains: true,
       preload: true,
     },
@@ -88,15 +107,6 @@ app.use(
 );
 
 //--- ROUTES
-
-app.use(
-  "/api/uploads",
-  (req, res, next) => {
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    next();
-  },
-  express.static(path.join(__dirname, "uploads"))
-);
 app.use("/api", adminRoutes);
 app.use("/api", authRoutes);
 app.use("/api", sectionRoutes);
@@ -122,12 +132,15 @@ app.use("/api", qteProdRoutes);
 app.use("/api", produitTailleCouleurQuantiteRoutes);
 app.use("/api", livraisonRoutes);
 app.use("/api", novaPostRoutes);
-
-//--- RELATIONNAL DB CONNEXION
-
+app.use("/api", imagesRoute);
+app.use("/api", clientRoutes);
+app.use("/api", shipmentsRoutes);
 //--- EXPRESS SERVER RUNNING
-
 const port = 3000;
 app.listen(port, () => {
-  console.log("Server is listenning PORT " + port);
+  console.log("Server is listening on PORT " + port);
+});
+const port2 = 3001;
+https.createServer(options, app).listen(port2, () => {
+    console.log(`HTTPS Server is listening on PORT ${port2}`);
 });

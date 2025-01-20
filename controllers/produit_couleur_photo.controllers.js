@@ -1,13 +1,14 @@
-const db = require("../utils/db_config"); // Assurez-vous que vous avez bien configuré votre fichier db.js pour les connexions MySQL
+const db = require("../utils/db_config"); // Assurez-vous quvous avez bien configuré votre fichier db.js pour les connexions MySQL
 
 // Créer une association produit-couleur-photo
 exports.createProduitCouleurPhoto = async (req, res) => {
-  const { produitId, couleurId, photoId } = req.body;
+  const { produitId, couleurId,photoId, photoUrl } = req.body; // Expecting photoUrl in the body
 
   try {
+    // Insert the record with the correct values
     const [result] = await db.query(
-      "INSERT INTO produit_couleur_photo (id_prod, id_coul, id_photo) VALUES (?, ?, ?)",
-      [produitId, couleurId, photoId]
+      "INSERT INTO produit_couleur_photo (id_prod, id_coul,id_photo, photo_url) VALUES (?, ?, ?, ?)",
+      [produitId, couleurId,photoId,  photoUrl] // Using photoUrl instead of photoId
     );
 
     res.status(201).json({
@@ -15,7 +16,7 @@ exports.createProduitCouleurPhoto = async (req, res) => {
       produitCouleurPhoto: {
         produitId,
         couleurId,
-        photoId,
+        photoUrl, // Returning photoUrl in the response
       },
     });
   } catch (error) {
@@ -42,7 +43,7 @@ exports.getAllProduitCouleurPhotos = async (req, res) => {
       photoId: item.id_photo,
     }));
 
-    res.status(200).json(formattedResults);
+    res.status(200).json(results);
   } catch (error) {
     console.error(
       "Erreur lors de la récupération des associations produit-couleur-photo:",
@@ -60,23 +61,12 @@ exports.getProduitCouleurPhotoByProduitId = async (req, res) => {
   const { produitId } = req.params;
 
   try {
-    // Requête SQL pour récupérer les associations avec les infos des photos et des couleurs
+    // SQL query to retrieve the associations with photo and color information
     const [results] = await db.query(
       `SELECT 
-        pcp.id_prod AS produitId, 
-        pcp.id_coul AS couleurId, 
-        pcp.id_photo AS photoId, 
-        c.description_couleur AS couleurDescription, 
-        c.hexa_value AS couleurHexa, 
-        c.photo_path AS photoCouleurPath, 
-        ph.name_photo AS photoName, 
-        ph.path_photo AS photoPath, 
-        ph.is_prod_cover AS cover, 
-        ph.is_prod_cover_on_hover AS coverHover
-      FROM produit_couleur_photo pcp
-      JOIN couleur c ON pcp.id_coul = c.id_coul
-      JOIN photo ph ON pcp.id_photo = ph.id_photo
-      WHERE pcp.id_prod = ?`,
+              * from produit_couleur_photo
+
+      WHERE id_prod = ?`,
       [produitId]
     );
 
@@ -86,21 +76,9 @@ exports.getProduitCouleurPhotoByProduitId = async (req, res) => {
       });
     }
 
-    // Reformater les résultats pour inclure les informations des photos et des couleurs
-    const formattedResults = results.map((item) => ({
-      produitId: item.produitId,
-      couleurId: item.couleurId,
-      couleurDescription: item.couleurDescription,
-      couleurHexa: item.couleurHexa,
-      photoCouleurPath: item.photoCouleurPath,
-      photoId: item.photoId,
-      photoName: item.photoName,
-      photoPath: item.photoPath,
-      isCover: item.cover,
-      coverHover: item.coverHover,
-    }));
+    // Format the results and replace photoPath with photoUrl
 
-    res.status(200).json(formattedResults);
+    res.status(200).json(results);
   } catch (error) {
     console.error(
       "Erreur lors de la récupération de l'association produit-couleur-photo:",
@@ -112,7 +90,6 @@ exports.getProduitCouleurPhotoByProduitId = async (req, res) => {
     });
   }
 };
-
 // Supprimer une association produit-couleur-photo
 exports.deleteProduitCouleurPhoto = async (req, res) => {
   const { produitId, couleurId, photoId } = req.body;
@@ -137,3 +114,4 @@ exports.deleteProduitCouleurPhoto = async (req, res) => {
     });
   }
 };
+
