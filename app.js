@@ -1,4 +1,4 @@
-//--- MODULES
+// --- MODULES
 const express = require("express");
 const app = express();
 const bodyParser = require('body-parser');
@@ -14,7 +14,7 @@ const path = require("path");
 const helmet = require("helmet");
 const fs = require("fs");
 
-//--- ROUTES
+// --- ROUTES
 const authRoutes = require("./routes/auth.routes");
 const statsRoutes = require("./routes/stat.routes");
 const adminRoutes = require("./routes/admin.routes");
@@ -34,7 +34,6 @@ const produitCommandeRoutes = require("./routes/produit_commande.routes");
 const produitTailleRoutes = require("./routes/produit_taille.routes");
 const produitCouleurPhotoRoutes = require("./routes/produit_couleur_photo.routes");
 const photoRoutes = require("./routes/photo.routes");
-//const mollieRoute = require("./routes/purchase.routes");
 const dropdownRoutes = require("./client/dropdown.routes");
 const qteProdRoutes = require("./routes/qteProduit.routes");
 const produitTailleCouleurQuantiteRoutes = require("./routes/produitTailleCouleurQuantite.routes");
@@ -44,16 +43,13 @@ const imagesRoute = require("./routes/images.routes.js");
 const clientRoutes = require("./routes/client.routes.js");
 const shipmentsRoutes = require("./routes/shipements.routes.js");
 
-// require("./utils/task_schudel");
-//app.use("/api", shipmentsRoutesddxcdd);
-
 // bodyparser middleware
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-//--- MIDDLEWARES
+// --- MIDDLEWARES
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -81,10 +77,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
 };
 
-const options = {
-    key: fs.readFileSync("/etc/ssl/private/private.key"),
-    cert: fs.readFileSync("/etc/ssl/certificate.crt"),
-};
 app.use(cors(corsOptions));
 
 // Helmet for security
@@ -106,7 +98,7 @@ app.use(
   })
 );
 
-//--- ROUTES
+// --- ROUTES
 app.use("/api", adminRoutes);
 app.use("/api", authRoutes);
 app.use("/api", sectionRoutes);
@@ -126,7 +118,6 @@ app.use("/api", produitCommandeRoutes);
 app.use("/api", produitCouleurPhotoRoutes);
 app.use("/api", produitTailleRoutes);
 app.use("/api/stats", statsRoutes);
-//app.use("/api", mollieRoute);
 app.use("/api", dropdownRoutes);
 app.use("/api", qteProdRoutes);
 app.use("/api", produitTailleCouleurQuantiteRoutes);
@@ -135,12 +126,23 @@ app.use("/api", novaPostRoutes);
 app.use("/api", imagesRoute);
 app.use("/api", clientRoutes);
 app.use("/api", shipmentsRoutes);
-//--- EXPRESS SERVER RUNNING
-const port = 3000;
-app.listen(port, () => {
-  console.log("Server is listening on PORT " + port);
+/*
+
+    ssl_certificate /etc/letsencrypt/live/idolapi.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/idolapi.com/privkey.pem; # managed by Certbot
+*/
+// --- SSL Configuration for HTTPS
+const options = {
+    key: fs.readFileSync("/etc/letsencrypt/live/idolapi.com/privkey.key"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/idolapi.com/fullchain.pem"),
+//    ca: fs.readFileSync("/etc/ssl/certs/My_CA_Bundle.ca-bundle.crt")
+};
+
+// --- HTTPS SERVER RUNNING
+https.createServer(options,  app).listen(443, () => {
+ console.log("HTTPS Server is running..."); // Default port 443 for HTTPS
 });
-const port2 = 3001;
-https.createServer(options, app).listen(port2, () => {
-    console.log(`HTTPS Server is listening on PORT ${port2}`);
-});
+
+//app.listen(3000, () => {
+//  console.log(`HTTP Server is running on port 3000`);
+//});

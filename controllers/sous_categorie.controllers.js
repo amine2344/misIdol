@@ -17,17 +17,17 @@ const formatSousCategorieResponse = (data) => ({
 // Récupérer toutes les sous-catégories
 const getAllSousCategorie = async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM sous_categorie");
+    const [rows] = await db.query("SELECT * FROM categorie");
     if (rows.length === 0) {
       return res.status(404).json({ message: "Aucune sous-catégorie trouvée" });
     }
 
     // Utilisation du mapper pour formater les données
-    const formattedData = rows
-      .map(mapSousCategorie)
-      .map(formatSousCategorieResponse);
+//    const formattedData = rows
+  //   .map(mapSousCategorie)
+    //  .map(formatSousCategorieResponse);
 
-    res.status(200).json(formattedData);
+    res.status(200).json(rows);
   } catch (error) {
     console.error("Erreur lors de la récupération des sous-catégories:", error);
     res

@@ -64,12 +64,12 @@ router.get("/client/produits", cors(), async (req, res) => {
 
     let query = `SELECT p.id_prod, p.nom_prod, p.pu_prod, p.description_prod, p.date_ajout_prod, 
                         p.id_sous_cat, p.id_style, 
-                        sc.nom_sous_cat, c.nom_cat, sec.nom_sec,
+                        c.nom_cat, sec.nom_sec,
                         t.id_taille, col.id_coul, m.id_mat, 
                         pcp.photo_url
                  FROM produit p
-                 LEFT JOIN sous_categorie sc ON p.id_sous_cat = sc.id_sous_cat
-                 LEFT JOIN categorie c ON sc.id_cat = c.id_cat
+               
+                 LEFT JOIN categorie c ON p.id_sous_cat = c.id_cat
                  LEFT JOIN section sec ON c.id_sec = sec.id_sec
                  LEFT JOIN produit_taille pt ON p.id_prod = pt.id_prod
                  LEFT JOIN taille t ON pt.id_taille = t.id_taille

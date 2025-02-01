@@ -7,14 +7,14 @@ const getAllProduits = async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT p.id_prod, p.nom_prod, p.pu_prod, p.date_ajout_prod, p.description_prod,
-             s.nom_sous_cat, st.nom_style,
+             s.nom_cat, st.nom_style,
              (SELECT ph.path_photo 
               FROM produit_couleur_photo pcp
               LEFT JOIN photo ph ON pcp.id_photo = ph.id_photo 
               WHERE pcp.id_prod = p.id_prod AND ph.is_prod_cover = 1 
               LIMIT 1) AS coverPhoto
       FROM produit p
-      LEFT JOIN sous_categorie s ON p.id_sous_cat = s.id_sous_cat
+      LEFT JOIN categorie s ON p.id_sous_cat = s.id_cat
       LEFT JOIN style st ON p.id_style = st.id_style
     `);
 
@@ -32,7 +32,7 @@ const getAllProduits = async (req, res) => {
       coverPhoto: prod.coverPhoto || null, // Chemin de la photo de couverture ou null si aucune photo n'est disponible
     }));
 
-    res.status(200).json(produits);
+    res.status(200).json(rows);
   } catch (error) {
     res
       .status(500)
@@ -48,9 +48,9 @@ const getProduitById = async (req, res) => {
     const [rows] = await db.query(
       `
       SELECT p.id_prod, p.nom_prod, p.pu_prod, p.date_ajout_prod, p.description_prod,
-             s.id_sous_cat, s.nom_sous_cat, st.id_style, st.nom_style
+             s.id_cat, s.nom_cat, st.id_style, st.nom_style
       FROM produit p
-      LEFT JOIN sous_categorie s ON p.id_sous_cat = s.id_sous_cat
+      LEFT JOIN categorie s ON p.id_sous_cat = s.id_cat
       LEFT JOIN style st ON p.id_style = st.id_style
       WHERE p.id_prod = ?
     `,
